@@ -1,0 +1,36 @@
+<html>
+  <head>
+    <script src="jquery.js"></script>
+    <script src="Bacon.js"></script>
+    <script>
+      $(function() {
+
+        //create a stream of characters from the to & message input fields        
+        var to = $("#to").asEventStream("keyup").map(function(event) { return $(event.target).val();});
+        var message = $("#message").asEventStream("keyup").map(function(event) { return $(event.target).val();});
+ 
+        //create a function that will take a string and convert it into an event stream with the first event call START
+        var toAddresses = function(a) { var arr = a.split(" "); arr.unshift("START"); return Bacon.fromArray(arr);};
+        //map the to stream into a new stream per event. Using the toAddresses function this will create a new stream
+        //of addresses for each event in the to input field
+        var addressStream = to.flatMap(toAddresses);
+        
+        //Let's go backwards ;) scan takes an accumulator function which is called once per event in a stream
+        //Here I'm resetting the accumulator if there is a "START" event
+        var validAddresses = addressStream.scan("",function(a,b) {if(b == "START") {return "";}; return a + ":" + b});
+        
+        //This binds to the text of a DOM element
+        //As you enter content and separate it by a space the output section will show a ":" separated list of email addresses
+        validAddresses.assign($("#output"),'text');
+      })
+    </script>
+  </head>
+  <body>
+    <h1>bacon.js example page</h1>
+    To: <input type="text" id="to"><br>
+    Message: <input type="text" id="message"><br>
+    Errors: <div id="errors"></div><br>
+    Network: <div id="output"></div><br>
+    <button id="send">SEND</button>
+  </body>
+</html>
